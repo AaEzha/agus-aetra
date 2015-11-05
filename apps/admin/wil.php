@@ -1,50 +1,39 @@
 <?php
-
 if(!isset($_GET['a'])){
-	$s = $_GET['s'];
-	$_SESSION['s'] = $s;
-	switch ($_SESSION['s']) {
-		case 'adm':
-			$data = "Administrator";
-			break;
-
-		case 'usr':
-			$data = "Pelanggan";
-			break;
-
-		case 'srv':
-			$data = "Surveyor";
-			break;
-		
-		default:
-			# code...
-			break;
-	}
 ?>
 	<?=tabel();?>
-	<h3>Data <?=$data;?> <small>| <a href="?hal=user&a=tambah">Tambah <?=$data;?></a></small></h3>
+	<h3>Data Admin Wilayah <small>| <a href="?hal=wil&a=tambah">Tambah Admin</a></small></h3>
 	<table id="tbl" class="centered">
 		<thead>
 			<tr>
 				<th data-field="id" width="10%">No</th>
 				<th data-field="uname">Username</th>
 				<th data-field="nama">Nama</th>
-				<th data-field="level">Level</th>
+				<th data-field="level">Wilayah</th>
 				<th data-field="aksi" width="20%">Aksi</th>
 			</tr>
 		</thead>
 
 		<tbody>
 		<?php
-		$qu = $db->query("select u.usr,u.level,u.id as idusr,b.nama,b.id as idbio from usr u join biodata b on u.id=b.idusr where u.hapus='0' and u.level='$s'");
+		$qu = $db->query("select 
+							u.usr,u.level,u.id as idusr,
+							b.nama,b.id as idbio,
+							uw.wilayah as wilayah
+							from usr u 
+							join biodata b 
+								on u.id=b.idusr 
+							join usr_wilayah uw 
+								on u.id=uw.idusr 
+							where u.hapus='0' and u.level='wil'");
 		$i=1;
 		while($d = $qu->fetch_array()){ ?>
 			<tr>
 				<td><?=$i;?></td>
 				<td><?=$d['usr'];?></td>
 				<td><?=$d['nama'];?></td>
-				<td><?=$d['level'];?></td>
-				<td><a href="?hal=user&a=ubah&u=<?=$d['idusr'];?>&b=<?=$d['idbio'];?>">Ubah</a> | <a href="?hal=user&a=hapus&u=<?=$d['idusr'];?>&b=<?=$d['idbio'];?>">Hapus</a></td>
+				<td><?=$d['wilayah'];?></td>
+				<td><a href="?hal=wil&a=ubah&u=<?=$d['idusr'];?>&b=<?=$d['idbio'];?>">Ubah</a> | <a href="?hal=wil&a=hapus&u=<?=$d['idusr'];?>&b=<?=$d['idbio'];?>">Hapus</a></td>
 			</tr>
 		<?php $i++; } ?>
 		</tbody>
@@ -52,30 +41,13 @@ if(!isset($_GET['a'])){
 <?php
 }else{
 	$a = $_GET['a'];
-	$s = $_SESSION['s'];
-	switch ($_SESSION['s']) {
-		case 'adm':
-			$data = "Administrator";
-			break;
-
-		case 'usr':
-			$data = "Pelanggan";
-			break;
-
-		case 'srv':
-			$data = "Surveyor";
-			break;
-		
-		default:
-			# code...
-			break;
-	}
 	switch ($a) {
 		case 'tambah':
 			if(isset($_POST['nama'])){
 				$nama = $_POST['nama'];
 				$email = $_POST['email'];
 				$usr = $_POST['usr'];
+				$wil = $_POST['wil'];
 				$passwd = $_POST['passwd'];
 
 				// cek usr
@@ -97,20 +69,20 @@ if(!isset($_GET['a'])){
 				$du = $qu->fetch_array();
 				$idusr = $du['uuid'];
 				$pass = md5($passwd);
-				$db->query("insert into usr(id,usr,passwd,level,usrcrt,wktcrt) values('$idusr','$usr','$pass','$s','$usr',now())") or die("Error inserting user");
+				$db->query("insert into usr(id,usr,passwd,level,usrcrt,wktcrt) values('$idusr','$usr','$pass','wil','$usr',now())") or die("Error inserting user");
 				// end
 
-				// uuid biodata
-				$qu = $db->query("select uuid() as uuid");
-				$du = $qu->fetch_array();
-				$idbio = $du['uuid'];
-				$db->query("insert into biodata(id,idusr,nama,email,usrcrt,wktcrt) values('$idbio','$idusr','$nama','$email','$usr',now())") or die("Error inserting bio");
+				// biodata
+				$db->query("insert into biodata(id,idusr,nama,email,usrcrt,wktcrt) values(uuid(),'$idusr','$nama','$email','$usr',now())") or die("Error inserting bio");
 				// end
 
-				eksyen('Data berhasil disimpan','?hal=user&s='.$s);
+				// wilayah
+				$db->query("insert into usr_wilayah(id,idusr,wilayah) values(uuid(),'$idusr','$wil')");
+
+				eksyen('Data berhasil disimpan','?hal=wil');
 			}
 ?>
-			<h3>Tambah <?=$data;?> <small>| <a href="?hal=user&s=<?=$s;?>">kembali</a></small></h3>
+			<h3>Tambah Admin Wilayah <small>| <a href="?hal=wil">kembali</a></small></h3>
 			<div class="row">
 				<form class="col s12" action="" method="post">
 					<div class="row">
@@ -133,6 +105,15 @@ if(!isset($_GET['a'])){
 							<label for="passwd">Password</label>
 						</div>
 					</div>
+
+					<div class="row">
+						<div class="input-field col s6">
+							<p><input class="with-gap" name="wil" type="radio" id="wil1" value="1" checked="" />
+    						<label for="wil1">Wilayah I</label></p>
+							<p><input class="with-gap" name="wil" type="radio" id="wil2" value="2" />
+    						<label for="wil2">Wilayah II</label></p>
+						</div>
+					</div>
 					<button type="submit" class="btn waves-effect waves-light">Simpan</button>
 				</form>
 			</div>
@@ -151,17 +132,22 @@ if(!isset($_GET['a'])){
 			$qb = $db->query("select nama, email from biodata where id='$_GET[b]'");
 			$b = $qb->fetch_array();
 
+			// wilayah
+			$qw = $db->query("select * from usr_wilayah where idusr='$_GET[u]'");
+			$w = $qw->fetch_array();
+
 			if(isset($_POST['nama'])){
 				$nama = $_POST['nama'];
 				$email = $_POST['email'];
 				$usr = $_POST['usr'];
 				$passwd = $_POST['passwd'];
+				$wil = $_POST['wil'];
 
 				$admin = $_SESSION['usr'];
 
 				// uuid usr
 				$idusr = $_GET['u'];
-				$db->query("update usr set usr='$usr',level='$s', usrupd='$admin', wktupd=now() where id='$idusr'") or die("Error inserting user");
+				$db->query("update usr set usr='$usr', usrupd='$admin', wktupd=now() where id='$idusr'") or die("Error inserting user");
 				// end
 
 				// passwd
@@ -171,15 +157,18 @@ if(!isset($_GET['a'])){
 				}
 				// end
 
+				// usr_wilayah
+				$db->query("update usr_wilayah set wilayah='$wil' where idusr='$idusr'");
+
 				// uuid biodata
 				$idbio = $_GET['b'];
 				$db->query("update biodata set nama='$nama', email='$email', usrupd='$admin', wktupd=now() where id='$idbio'") or die("Error inserting bio");
 				// end
 
-				eksyen('Data berhasil disimpan','?hal=user&s='.$s);
+				eksyen('Data berhasil disimpan','?hal=wil');
 			}
 ?>
-			<h3>Ubah <?=$data;?> <small>| <a href="?hal=user&s=<?=$s;?>">kembali</a></small></h3>
+			<h3>Ubah Admin Wilayah <small>| <a href="?hal=wil">kembali</a></small></h3>
 			<div class="row">
 				<form class="col s12" action="" method="post">
 					<div class="row">
@@ -202,6 +191,14 @@ if(!isset($_GET['a'])){
 							<label for="passwd">Password</label>
 						</div>
 					</div>
+					<div class="row">
+						<div class="input-field col s6">
+							<p><input class="with-gap" name="wil" type="radio" id="wil1" value="1" <?php if($w['wilayah']=='1') echo "checked";?> />
+    						<label for="wil1">Wilayah I</label></p>
+							<p><input class="with-gap" name="wil" type="radio" id="wil2" value="2" <?php if($w['wilayah']=='2') echo "checked";?> />
+    						<label for="wil2">Wilayah II</label></p>
+						</div>
+					</div>
 					<button type="submit" class="btn waves-effect waves-light">Simpan</button>
 				</form>
 			</div>
@@ -210,7 +207,7 @@ if(!isset($_GET['a'])){
 
 		case 'hapus':
 			if(!$_GET['b'] or !$_GET['u'] or $_GET['b']=='' or $_GET['u']==''){
-				eksyen('','?hal=user&s='.$s);
+				eksyen('','?hal=wil');
 			}
 
 			// usr
@@ -220,7 +217,7 @@ if(!isset($_GET['a'])){
 			$idbio = $_GET['b'];
 			$db->query("update biodata set hapus='1' where id='$idbio'");
 
-			eksyen('Data berhasil dihapus','?hal=user');
+			eksyen('Data berhasil dihapus','?hal=wil');
 		
 		default:
 			# code...

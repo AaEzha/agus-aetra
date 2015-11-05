@@ -19,6 +19,9 @@ if(isset($_POST['usr'])){
 			case 'srv':
 				eksyen('','apps/survey');
 				break;
+			case 'wil':
+				eksyen('','apps/wil');
+				break;
 			
 			default:
 				# code...
